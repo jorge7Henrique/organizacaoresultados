@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Monitoramento de Resultados Semanal</title>
+<style>
+  :root {
+    --verde: #0b8f4f;
+    --verde-escuro: #076b3b;
+    --verde-claro: #e6f7ee;
+    --fundo: #f4f6f5;
+    --texto: #1f2a24;
+    --texto-suave: #5c6b63;
+    --borda: #dbe6e0;
+    --branco: #ffffff;
+    --erro: #c0392b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--fundo);
+    color: var(--texto);
+    padding: 16px;
+  }
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  header h1 {
+    font-size: 1.6rem;
+    margin: 0 0 4px;
+    color: var(--verde-escuro);
+  }
+  header p {
+    margin: 0;
+    color: var(--texto-suave);
+    font-size: 0.9rem;
+  }
+  .card {
+    background: var(--branco);
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 1.1rem;
+    margin: 0 0 16px;
+    color: var(--verde-escuro);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+  }
+  label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--texto-suave);
+    margin-bottom: 4px;
+  }
+  input {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: var(--fundo);
+  }
+  input:focus {
+    outline: none;
+    border-color: var(--verde);
+    background: var(--branco);
+  }
+  .conversao-preview {
+    background: var(--verde-claro);
+    border-radius: 8px;
+    padding: 9px 10px;
+    font-weight: 700;
+    color: var(--verde-escuro);
+  }
+  .acoes {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+    align-items: center;
+  }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .btn-primario {
+    background: var(--verde);
+    color: white;
+  }
+  .btn-primario:hover { background: var(--verde-escuro); }
+  .btn-secundario {
+    background: transparent;
+    color: var(--texto-suave);
+    border: 1px solid var(--borda);
+  }
+  .btn-secundario:hover { background: var(--fundo); }
+  .mensagem-erro {
+    color: var(--erro);
+    font-size: 0.85rem;
+    margin-top: 8px;
+  }
+  .resumo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .resumo-item {
+    background: var(--verde-claro);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .resumo-item .valor {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--verde-escuro);
+  }
+  .resumo-item .rotulo {
+    font-size: 0.75rem;
+    color: var(--texto-suave);
+    margin-top: 2px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--borda);
+    white-space: nowrap;
+  }
+  th {
+    color: var(--texto-suave);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+  tbody tr:hover { background: var(--verde-claro); }
+  .tabela-wrap { overflow-x: auto; }
+  .acoes-linha button {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    margin-right: 4px;
+  }
+  .vazio {
+    text-align: center;
+    color: var(--texto-suave);
+    padding: 24px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Monitoramento de Resultados Semanal 💚✈️</h1>
+    <p>Acompanhamento semanal de atendimentos, vendas, conversão, faturamento e lucro bruto</p>
+  </header>
+
+  <div class="card">
+    <h2 id="form-titulo">Nova Semana</h2>
+    <form id="form-resultado">
+      <input type="hidden" id="edit-id" />
+      <div class="grid">
+        <div>
+          <label for="semanaInicio">Início da Semana</label>
+          <input type="date" id="semanaInicio" required />
+        </div>
+        <div>
+          <label for="semanaFim">Fim da Semana</label>
+          <input type="date" id="semanaFim" required />
+        </div>
+        <div>
+          <label for="atendimentos">Quantidade de Atendimentos</label>
+          <input type="number" id="atendimentos" min="0" step="1" required />
+        </div>
+        <div>
+          <label for="vendas">Quantidade de Vendas</label>
+          <input type="number" id="vendas" min="0" step="1" required />
+        </div>
+        <div>
+          <label>Conversão (calculada)</label>
+          <div class="conversao-preview" id="conversao-preview">0%</div>
+        </div>
+        <div>
+          <label for="faturamentoTotal">Faturamento Total (R$)</label>
+          <input type="number" id="faturamentoTotal" min="0" step="0.01" required />
+        </div>
+        <div>
+          <label for="lucroBrutoTotal">Lucro Bruto Total (R$)</label>
+          <input type="number" id="lucroBrutoTotal" step="0.01" required />
+        </div>
+      </div>
+      <div class="acoes">
+        <button type="submit" class="btn-primario" id="btn-salvar">Salvar Semana</button>
+        <button type="button" class="btn-secundario" id="btn-cancelar" style="display:none;">Cancelar edição</button>
+      </div>
+      <div class="mensagem-erro" id="mensagem-erro"></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Resumo Geral</h2>
+    <div class="resumo-grid" id="resumo-geral"></div>
+  </div>
+
+  <div class="card">
+    <h2>Histórico Semanal</h2>
+    <div class="tabela-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Atendimentos</th>
+            <th>Vendas</th>
+            <th>Conversão</th>
+            <th>Faturamento</th>
+            <th>Lucro Bruto</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tabela-corpo"></tbody>
+      </table>
+      <div class="vazio" id="tabela-vazio" style="display:none;">Nenhum resultado cadastrado ainda.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const form = document.getElementById('form-resultado');
+const campoAtendimentos = document.getElementById('atendimentos');
+const campoVendas = document.getElementById('vendas');
+const conversaoPreview = document.getElementById('conversao-preview');
+const mensagemErro = document.getElementById('mensagem-erro');
+const editId = document.getElementById('edit-id');
+const btnCancelar = document.getElementById('btn-cancelar');
+const btnSalvar = document.getElementById('btn-salvar');
+const formTitulo = document.getElementById('form-titulo');
+
+function formatarMoeda(valor) {
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function calcularConversao(atendimentos, vendas) {
+  if (!atendimentos || atendimentos <= 0) return 0;
+  return (vendas / atendimentos) * 100;
+}
+
+function atualizarPreviewConversao() {
+  const a = Number(campoAtendimentos.value) || 0;
+  const v = Number(campoVendas.value) || 0;
+  conversaoPreview.textContent = calcularConversao(a, v).toFixed(1) + '%';
+}
+campoAtendimentos.addEventListener('input', atualizarPreviewConversao);
+campoVendas.addEventListener('input', atualizarPreviewConversao);
+
+function formatarData(iso) {
+  const [ano, mes, dia] = iso.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
+async function carregarResultados() {
+  const resp = await fetch('/api/resultados');
+  const resultados = await resp.json();
+  renderizarTabela(resultados);
+  renderizarResumo(resultados);
+}
+
+function renderizarResumo(resultados) {
+  const resumo = document.getElementById('resumo-geral');
+  if (resultados.length === 0) {
+    resumo.innerHTML = '<div class="vazio">Sem dados suficientes para o resumo.</div>';
+    return;
+  }
+  const totalAtendimentos = resultados.reduce((s, r) => s + r.atendimentos, 0);
+  const totalVendas = resultados.reduce((s, r) => s + r.vendas, 0);
+  const totalFaturamento = resultados.reduce((s, r) => s + r.faturamentoTotal, 0);
+  const totalLucro = resultados.reduce((s, r) => s + r.lucroBrutoTotal, 0);
+  const conversaoMedia = calcularConversao(totalAtendimentos, totalVendas);
+
+  resumo.innerHTML = `
+    <div class="resumo-item"><div class="valor">${totalAtendimentos}</div><div class="rotulo">Atendimentos</div></div>
+    <div class="resumo-item"><div class="valor">${totalVendas}</div><div class="rotulo">Vendas</div></div>
+    <div class="resumo-item"><div class="valor">${conversaoMedia.toFixed(1)}%</div><div class="rotulo">Conversão Média</div></div>
+    <div class="resumo-item"><div class="valor">${formatarMoeda(totalFaturamento)}</div><div class="rotulo">Faturamento Total</div></div>
+    <div class="resumo-item"><div class="valor">${formatarMoeda(totalLucro)}</div><div class="rotulo">Lucro Bruto Total</div></div>
+  `;
+}
+
+function renderizarTabela(resultados) {
+  const corpo = document.getElementById('tabela-corpo');
+  const vazio = document.getElementById('tabela-vazio');
+  corpo.innerHTML = '';
+
+  if (resultados.length === 0) {
+    vazio.style.display = 'block';
+    return;
+  }
+  vazio.style.display = 'none';
+
+  for (const r of resultados) {
+    const conversao = calcularConversao(r.atendimentos, r.vendas);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${formatarData(r.semanaInicio)} — ${formatarData(r.semanaFim)}</td>
+      <td>${r.atendimentos}</td>
+      <td>${r.vendas}</td>
+      <td>${conversao.toFixed(1)}%</td>
+      <td>${formatarMoeda(r.faturamentoTotal)}</td>
+      <td>${formatarMoeda(r.lucroBrutoTotal)}</td>
+      <td class="acoes-linha">
+        <button type="button" class="btn-secundario" data-editar="${r.id}">Editar</button>
+        <button type="button" class="btn-secundario" data-excluir="${r.id}">Excluir</button>
+      </td>
+    `;
+    corpo.appendChild(tr);
+  }
+
+  corpo.querySelectorAll('[data-editar]').forEach((btn) => {
+    btn.addEventListener('click', () => iniciarEdicao(btn.dataset.editar, resultados));
+  });
+  corpo.querySelectorAll('[data-excluir]').forEach((btn) => {
+    btn.addEventListener('click', () => excluirResultado(btn.dataset.excluir));
+  });
+}
+
+function iniciarEdicao(id, resultados) {
+  const registro = resultados.find((r) => r.id === id);
+  if (!registro) return;
+  editId.value = registro.id;
+  document.getElementById('semanaInicio').value = registro.semanaInicio;
+  document.getElementById('semanaFim').value = registro.semanaFim;
+  campoAtendimentos.value = registro.atendimentos;
+  campoVendas.value = registro.vendas;
+  document.getElementById('faturamentoTotal').value = registro.faturamentoTotal;
+  document.getElementById('lucroBrutoTotal').value = registro.lucroBrutoTotal;
+  atualizarPreviewConversao();
+  formTitulo.textContent = 'Editar Semana';
+  btnSalvar.textContent = 'Atualizar Semana';
+  btnCancelar.style.display = 'inline-block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelarEdicao() {
+  form.reset();
+  editId.value = '';
+  conversaoPreview.textContent = '0%';
+  formTitulo.textContent = 'Nova Semana';
+  btnSalvar.textContent = 'Salvar Semana';
+  btnCancelar.style.display = 'none';
+  mensagemErro.textContent = '';
+}
+btnCancelar.addEventListener('click', cancelarEdicao);
+
+async function excluirResultado(id) {
+  if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+  await fetch(`/api/resultados/${id}`, { method: 'DELETE' });
+  carregarResultados();
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  mensagemErro.textContent = '';
+
+  const payload = {
+    semanaInicio: document.getElementById('semanaInicio').value,
+    semanaFim: document.getElementById('semanaFim').value,
+    atendimentos: campoAtendimentos.value,
+    vendas: campoVendas.value,
+    faturamentoTotal: document.getElementById('faturamentoTotal').value,
+    lucroBrutoTotal: document.getElementById('lucroBrutoTotal').value,
+  };
+
+  const id = editId.value;
+  const url = id ? `/api/resultados/${id}` : '/api/resultados';
+  const method = id ? 'PUT' : 'POST';
+
+  const resp = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!resp.ok) {
+    const erro = await resp.json();
+    mensagemErro.textContent = erro.erro || 'Erro ao salvar resultado.';
+    return;
+  }
+
+  cancelarEdicao();
+  carregarResultados();
+});
+
+carregarResultados();
+conectarTempoReal();
+
+function conectarTempoReal() {
+  const origem = new EventSource('/api/eventos');
+  origem.addEventListener('atualizado', () => {
+    carregarResultados();
+  });
+  origem.onerror = () => {
+    // A conexão SSE reconecta automaticamente; nada a fazer aqui.
+  };
+}
+</script>
+</body>
+</html>
