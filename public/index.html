@@ -3,29 +3,31 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Monitoramento de Resultados Semanal</title>
+<title>Pipo Fly — Monitoramento de Resultados</title>
 <style>
   :root {
-    --verde: #0b8f4f;
-    --verde-escuro: #076b3b;
-    --verde-claro: #e6f7ee;
-    --fundo: #f4f6f5;
-    --texto: #1f2a24;
-    --texto-suave: #5c6b63;
-    --borda: #dbe6e0;
-    --branco: #ffffff;
-    --erro: #c0392b;
+    --bg: #0c1210;
+    --card-bg: #141d19;
+    --card-bg-alt: #182420;
+    --borda: #253530;
+    --texto: #eaf3ee;
+    --texto-suave: #93a89c;
+    --verde: #22c55e;
+    --verde-escuro: #16a34a;
+    --verde-suave: rgba(34, 197, 94, 0.14);
+    --erro: #f87171;
+    --erro-suave: rgba(248, 113, 113, 0.12);
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--fundo);
+    background: var(--bg);
     color: var(--texto);
     padding: 16px;
   }
   .container {
-    max-width: 960px;
+    max-width: 980px;
     margin: 0 auto;
   }
   header {
@@ -33,26 +35,50 @@
     margin-bottom: 24px;
   }
   header h1 {
-    font-size: 1.6rem;
-    margin: 0 0 4px;
-    color: var(--verde-escuro);
+    font-size: 1.7rem;
+    margin: 0 0 6px;
+    color: var(--texto);
+  }
+  header h1 strong {
+    color: var(--verde);
   }
   header p {
     margin: 0;
     color: var(--texto-suave);
     font-size: 0.9rem;
   }
+  header p strong {
+    color: var(--texto);
+  }
   .card {
-    background: var(--branco);
+    background: var(--card-bg);
     border: 1px solid var(--borda);
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 20px;
   }
+  .card-titulo {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
   .card h2 {
     font-size: 1.1rem;
-    margin: 0 0 16px;
-    color: var(--verde-escuro);
+    margin: 0;
+    color: var(--texto);
+  }
+  .card .selo {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--verde);
+    background: var(--verde-suave);
+    padding: 3px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
   }
   .grid {
     display: grid;
@@ -72,19 +98,22 @@
     border: 1px solid var(--borda);
     border-radius: 8px;
     font-size: 0.95rem;
-    background: var(--fundo);
+    background: var(--bg);
+    color: var(--texto);
   }
   input:focus {
     outline: none;
     border-color: var(--verde);
-    background: var(--branco);
   }
+  input::placeholder { color: var(--texto-suave); }
+  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
   .conversao-preview {
-    background: var(--verde-claro);
+    background: var(--verde-suave);
+    border: 1px solid transparent;
     border-radius: 8px;
     padding: 9px 10px;
     font-weight: 700;
-    color: var(--verde-escuro);
+    color: var(--verde);
   }
   .acoes {
     display: flex;
@@ -102,19 +131,23 @@
   }
   .btn-primario {
     background: var(--verde);
-    color: white;
+    color: #04140b;
   }
   .btn-primario:hover { background: var(--verde-escuro); }
+  .btn-primario:disabled { opacity: 0.6; cursor: not-allowed; }
   .btn-secundario {
     background: transparent;
     color: var(--texto-suave);
     border: 1px solid var(--borda);
   }
-  .btn-secundario:hover { background: var(--fundo); }
+  .btn-secundario:hover { background: var(--card-bg-alt); color: var(--texto); }
   .mensagem-erro {
     color: var(--erro);
+    background: var(--erro-suave);
+    border-radius: 8px;
+    padding: 8px 10px;
     font-size: 0.85rem;
-    margin-top: 8px;
+    margin-top: 12px;
   }
   .resumo-grid {
     display: grid;
@@ -122,7 +155,8 @@
     gap: 12px;
   }
   .resumo-item {
-    background: var(--verde-claro);
+    background: var(--card-bg-alt);
+    border: 1px solid var(--borda);
     border-radius: 10px;
     padding: 14px;
     text-align: center;
@@ -130,7 +164,7 @@
   .resumo-item .valor {
     font-size: 1.3rem;
     font-weight: 700;
-    color: var(--verde-escuro);
+    color: var(--verde);
   }
   .resumo-item .rotulo {
     font-size: 0.75rem;
@@ -154,7 +188,7 @@
     font-size: 0.75rem;
     text-transform: uppercase;
   }
-  tbody tr:hover { background: var(--verde-claro); }
+  tbody tr:hover { background: var(--card-bg-alt); }
   .tabela-wrap { overflow-x: auto; }
   .acoes-linha button {
     padding: 5px 10px;
@@ -166,27 +200,35 @@
     color: var(--texto-suave);
     padding: 24px;
   }
+  .badge-atual {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--verde);
+    background: var(--verde-suave);
+    padding: 2px 6px;
+    border-radius: 999px;
+    margin-left: 6px;
+  }
 </style>
 </head>
 <body>
 <div class="container">
   <header>
-    <h1>Monitoramento de Resultados Semanal 💚✈️</h1>
-    <p>Acompanhamento semanal de atendimentos, vendas, conversão, faturamento e lucro bruto</p>
+    <h1><strong>Pipo Fly</strong> 💚✈️ — Monitoramento de Resultados</h1>
+    <p>Acompanhamento <strong>semanal</strong> dos indicadores de atendimento e vendas</p>
   </header>
 
   <div class="card">
-    <h2 id="form-titulo">Nova Semana</h2>
-    <form id="form-resultado">
+    <div class="card-titulo">
+      <h2 id="form-titulo">Lançar Resultado do Dia</h2>
+    </div>
+    <form id="form-registro">
       <input type="hidden" id="edit-id" />
       <div class="grid">
         <div>
-          <label for="semanaInicio">Início da Semana</label>
-          <input type="date" id="semanaInicio" required />
-        </div>
-        <div>
-          <label for="semanaFim">Fim da Semana</label>
-          <input type="date" id="semanaFim" required />
+          <label for="data">Data</label>
+          <input type="date" id="data" required />
         </div>
         <div>
           <label for="atendimentos">Quantidade de Atendimentos</label>
@@ -201,20 +243,28 @@
           <div class="conversao-preview" id="conversao-preview">0%</div>
         </div>
         <div>
-          <label for="faturamentoTotal">Faturamento Total (R$)</label>
-          <input type="number" id="faturamentoTotal" min="0" step="0.01" required />
+          <label for="faturamento">Faturamento (R$)</label>
+          <input type="text" inputmode="numeric" id="faturamento" placeholder="R$ 0" required />
         </div>
         <div>
-          <label for="lucroBrutoTotal">Lucro Bruto Total (R$)</label>
-          <input type="number" id="lucroBrutoTotal" step="0.01" required />
+          <label for="lucroBruto">Lucro Bruto (R$)</label>
+          <input type="text" inputmode="numeric" id="lucroBruto" placeholder="R$ 0" required />
         </div>
       </div>
       <div class="acoes">
-        <button type="submit" class="btn-primario" id="btn-salvar">Salvar Semana</button>
+        <button type="submit" class="btn-primario" id="btn-salvar">Salvar Dia</button>
         <button type="button" class="btn-secundario" id="btn-cancelar" style="display:none;">Cancelar edição</button>
       </div>
-      <div class="mensagem-erro" id="mensagem-erro"></div>
+      <div class="mensagem-erro" id="mensagem-erro" style="display:none;"></div>
     </form>
+  </div>
+
+  <div class="card">
+    <div class="card-titulo">
+      <h2>Semana Atual</h2>
+      <span class="selo" id="periodo-semana-atual"></span>
+    </div>
+    <div class="resumo-grid" id="resumo-semana-atual"></div>
   </div>
 
   <div class="card">
@@ -234,20 +284,43 @@
             <th>Conversão</th>
             <th>Faturamento</th>
             <th>Lucro Bruto</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-semanas-corpo"></tbody>
+      </table>
+      <div class="vazio" id="tabela-semanas-vazio" style="display:none;">Nenhum resultado cadastrado ainda.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Lançamentos Diários</h2>
+    <div class="tabela-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Atendimentos</th>
+            <th>Vendas</th>
+            <th>Conversão</th>
+            <th>Faturamento</th>
+            <th>Lucro Bruto</th>
             <th></th>
           </tr>
         </thead>
-        <tbody id="tabela-corpo"></tbody>
+        <tbody id="tabela-dias-corpo"></tbody>
       </table>
-      <div class="vazio" id="tabela-vazio" style="display:none;">Nenhum resultado cadastrado ainda.</div>
+      <div class="vazio" id="tabela-dias-vazio" style="display:none;">Nenhum lançamento diário ainda.</div>
     </div>
   </div>
 </div>
 
 <script>
-const form = document.getElementById('form-resultado');
+const form = document.getElementById('form-registro');
+const campoData = document.getElementById('data');
 const campoAtendimentos = document.getElementById('atendimentos');
 const campoVendas = document.getElementById('vendas');
+const campoFaturamento = document.getElementById('faturamento');
+const campoLucroBruto = document.getElementById('lucroBruto');
 const conversaoPreview = document.getElementById('conversao-preview');
 const mensagemErro = document.getElementById('mensagem-erro');
 const editId = document.getElementById('edit-id');
@@ -255,8 +328,62 @@ const btnCancelar = document.getElementById('btn-cancelar');
 const btnSalvar = document.getElementById('btn-salvar');
 const formTitulo = document.getElementById('form-titulo');
 
+let ultimosRegistros = [];
+
+// ---------- utilidades de data ----------
+
+function paraISO(d) {
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
+function dataLocal(iso) {
+  return new Date(iso + 'T00:00:00');
+}
+
+function formatarData(iso) {
+  const [ano, mes, dia] = iso.split('-');
+  return `${dia}/${mes}`;
+}
+
+// Semana começa no domingo e termina no sábado.
+function inicioDaSemana(iso) {
+  const d = dataLocal(iso);
+  d.setDate(d.getDate() - d.getDay());
+  return d;
+}
+
+function fimDaSemana(inicio) {
+  const fim = new Date(inicio);
+  fim.setDate(fim.getDate() + 6);
+  return fim;
+}
+
+// ---------- máscara de moeda (R$ 1.500) ----------
+
+function valorMoedaParaNumero(texto) {
+  const digitos = String(texto || '').replace(/\D/g, '');
+  return digitos ? Number(digitos) : 0;
+}
+
+function numeroParaMoeda(valor) {
+  const numero = Math.round(Number(valor) || 0);
+  return 'R$ ' + numero.toLocaleString('pt-BR');
+}
+
+function aplicarMascaraMoeda(input) {
+  input.addEventListener('input', () => {
+    const numero = valorMoedaParaNumero(input.value);
+    input.value = numero ? numeroParaMoeda(numero) : '';
+  });
+}
+aplicarMascaraMoeda(campoFaturamento);
+aplicarMascaraMoeda(campoLucroBruto);
+
 function formatarMoeda(valor) {
-  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 function calcularConversao(atendimentos, vendas) {
@@ -272,60 +399,150 @@ function atualizarPreviewConversao() {
 campoAtendimentos.addEventListener('input', atualizarPreviewConversao);
 campoVendas.addEventListener('input', atualizarPreviewConversao);
 
-function formatarData(iso) {
-  const [ano, mes, dia] = iso.split('-');
-  return `${dia}/${mes}/${ano}`;
+if (!campoData.value) campoData.value = paraISO(new Date());
+
+// ---------- carregar e renderizar ----------
+
+async function carregarRegistros() {
+  try {
+    const resp = await fetch('/api/dias');
+    if (!resp.ok) throw new Error('Falha ao carregar dados');
+    ultimosRegistros = await resp.json();
+    renderizarTudo();
+  } catch (err) {
+    console.error(err);
+    mostrarErro('Não foi possível carregar os dados. Verifique sua conexão e recarregue a página.');
+  }
 }
 
-async function carregarResultados() {
-  const resp = await fetch('/api/resultados');
-  const resultados = await resp.json();
-  renderizarTabela(resultados);
-  renderizarResumo(resultados);
+function renderizarTudo() {
+  renderizarResumo(ultimosRegistros);
+  renderizarSemanaAtual(ultimosRegistros);
+  renderizarHistoricoSemanal(ultimosRegistros);
+  renderizarTabelaDias(ultimosRegistros);
 }
 
-function renderizarResumo(resultados) {
-  const resumo = document.getElementById('resumo-geral');
-  if (resultados.length === 0) {
-    resumo.innerHTML = '<div class="vazio">Sem dados suficientes para o resumo.</div>';
+function somar(registros) {
+  return registros.reduce(
+    (acc, r) => {
+      acc.atendimentos += r.atendimentos;
+      acc.vendas += r.vendas;
+      acc.faturamento += r.faturamento;
+      acc.lucroBruto += r.lucroBruto;
+      return acc;
+    },
+    { atendimentos: 0, vendas: 0, faturamento: 0, lucroBruto: 0 }
+  );
+}
+
+function renderizarResumoEm(elementoId, registros, vazioTexto) {
+  const alvo = document.getElementById(elementoId);
+  if (registros.length === 0) {
+    alvo.innerHTML = `<div class="vazio">${vazioTexto}</div>`;
     return;
   }
-  const totalAtendimentos = resultados.reduce((s, r) => s + r.atendimentos, 0);
-  const totalVendas = resultados.reduce((s, r) => s + r.vendas, 0);
-  const totalFaturamento = resultados.reduce((s, r) => s + r.faturamentoTotal, 0);
-  const totalLucro = resultados.reduce((s, r) => s + r.lucroBrutoTotal, 0);
-  const conversaoMedia = calcularConversao(totalAtendimentos, totalVendas);
-
-  resumo.innerHTML = `
-    <div class="resumo-item"><div class="valor">${totalAtendimentos}</div><div class="rotulo">Atendimentos</div></div>
-    <div class="resumo-item"><div class="valor">${totalVendas}</div><div class="rotulo">Vendas</div></div>
-    <div class="resumo-item"><div class="valor">${conversaoMedia.toFixed(1)}%</div><div class="rotulo">Conversão Média</div></div>
-    <div class="resumo-item"><div class="valor">${formatarMoeda(totalFaturamento)}</div><div class="rotulo">Faturamento Total</div></div>
-    <div class="resumo-item"><div class="valor">${formatarMoeda(totalLucro)}</div><div class="rotulo">Lucro Bruto Total</div></div>
+  const total = somar(registros);
+  const conversao = calcularConversao(total.atendimentos, total.vendas);
+  alvo.innerHTML = `
+    <div class="resumo-item"><div class="valor">${total.atendimentos}</div><div class="rotulo">Atendimentos</div></div>
+    <div class="resumo-item"><div class="valor">${total.vendas}</div><div class="rotulo">Vendas</div></div>
+    <div class="resumo-item"><div class="valor">${conversao.toFixed(1)}%</div><div class="rotulo">Conversão</div></div>
+    <div class="resumo-item"><div class="valor">${formatarMoeda(total.faturamento)}</div><div class="rotulo">Faturamento</div></div>
+    <div class="resumo-item"><div class="valor">${formatarMoeda(total.lucroBruto)}</div><div class="rotulo">Lucro Bruto</div></div>
   `;
 }
 
-function renderizarTabela(resultados) {
-  const corpo = document.getElementById('tabela-corpo');
-  const vazio = document.getElementById('tabela-vazio');
+function renderizarResumo(registros) {
+  renderizarResumoEm('resumo-geral', registros, 'Sem dados suficientes para o resumo.');
+}
+
+function renderizarSemanaAtual(registros) {
+  const inicio = inicioDaSemana(paraISO(new Date()));
+  const fim = fimDaSemana(inicio);
+  document.getElementById('periodo-semana-atual').textContent =
+    `${formatarData(paraISO(inicio))} — ${formatarData(paraISO(fim))}`;
+
+  const chaveInicio = paraISO(inicio);
+  const chaveFim = paraISO(fim);
+  const daSemana = registros.filter((r) => r.data >= chaveInicio && r.data <= chaveFim);
+  renderizarResumoEm('resumo-semana-atual', daSemana, 'Nenhum lançamento nesta semana ainda.');
+}
+
+function agruparPorSemana(registros) {
+  const mapa = new Map();
+  for (const r of registros) {
+    const inicio = inicioDaSemana(r.data);
+    const chave = paraISO(inicio);
+    if (!mapa.has(chave)) {
+      mapa.set(chave, {
+        inicio: chave,
+        fim: paraISO(fimDaSemana(inicio)),
+        atendimentos: 0,
+        vendas: 0,
+        faturamento: 0,
+        lucroBruto: 0,
+      });
+    }
+    const grupo = mapa.get(chave);
+    grupo.atendimentos += r.atendimentos;
+    grupo.vendas += r.vendas;
+    grupo.faturamento += r.faturamento;
+    grupo.lucroBruto += r.lucroBruto;
+  }
+  return Array.from(mapa.values()).sort((a, b) => (a.inicio < b.inicio ? 1 : -1));
+}
+
+function renderizarHistoricoSemanal(registros) {
+  const corpo = document.getElementById('tabela-semanas-corpo');
+  const vazio = document.getElementById('tabela-semanas-vazio');
+  const semanas = agruparPorSemana(registros);
   corpo.innerHTML = '';
 
-  if (resultados.length === 0) {
+  if (semanas.length === 0) {
     vazio.style.display = 'block';
     return;
   }
   vazio.style.display = 'none';
 
-  for (const r of resultados) {
+  const chaveAtual = paraISO(inicioDaSemana(paraISO(new Date())));
+
+  for (const s of semanas) {
+    const conversao = calcularConversao(s.atendimentos, s.vendas);
+    const tr = document.createElement('tr');
+    const atual = s.inicio === chaveAtual;
+    tr.innerHTML = `
+      <td>${formatarData(s.inicio)} — ${formatarData(s.fim)}${atual ? '<span class="badge-atual">Em andamento</span>' : ''}</td>
+      <td>${s.atendimentos}</td>
+      <td>${s.vendas}</td>
+      <td>${conversao.toFixed(1)}%</td>
+      <td>${formatarMoeda(s.faturamento)}</td>
+      <td>${formatarMoeda(s.lucroBruto)}</td>
+    `;
+    corpo.appendChild(tr);
+  }
+}
+
+function renderizarTabelaDias(registros) {
+  const corpo = document.getElementById('tabela-dias-corpo');
+  const vazio = document.getElementById('tabela-dias-vazio');
+  corpo.innerHTML = '';
+
+  if (registros.length === 0) {
+    vazio.style.display = 'block';
+    return;
+  }
+  vazio.style.display = 'none';
+
+  for (const r of registros) {
     const conversao = calcularConversao(r.atendimentos, r.vendas);
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${formatarData(r.semanaInicio)} — ${formatarData(r.semanaFim)}</td>
+      <td>${formatarData(r.data)}</td>
       <td>${r.atendimentos}</td>
       <td>${r.vendas}</td>
       <td>${conversao.toFixed(1)}%</td>
-      <td>${formatarMoeda(r.faturamentoTotal)}</td>
-      <td>${formatarMoeda(r.lucroBrutoTotal)}</td>
+      <td>${formatarMoeda(r.faturamento)}</td>
+      <td>${formatarMoeda(r.lucroBruto)}</td>
       <td class="acoes-linha">
         <button type="button" class="btn-secundario" data-editar="${r.id}">Editar</button>
         <button type="button" class="btn-secundario" data-excluir="${r.id}">Excluir</button>
@@ -335,26 +552,37 @@ function renderizarTabela(resultados) {
   }
 
   corpo.querySelectorAll('[data-editar]').forEach((btn) => {
-    btn.addEventListener('click', () => iniciarEdicao(btn.dataset.editar, resultados));
+    btn.addEventListener('click', () => iniciarEdicao(btn.dataset.editar));
   });
   corpo.querySelectorAll('[data-excluir]').forEach((btn) => {
-    btn.addEventListener('click', () => excluirResultado(btn.dataset.excluir));
+    btn.addEventListener('click', () => excluirRegistro(btn.dataset.excluir));
   });
 }
 
-function iniciarEdicao(id, resultados) {
-  const registro = resultados.find((r) => r.id === id);
+// ---------- formulário ----------
+
+function mostrarErro(texto) {
+  mensagemErro.textContent = texto;
+  mensagemErro.style.display = 'block';
+}
+
+function limparErro() {
+  mensagemErro.textContent = '';
+  mensagemErro.style.display = 'none';
+}
+
+function iniciarEdicao(id) {
+  const registro = ultimosRegistros.find((r) => r.id === id);
   if (!registro) return;
   editId.value = registro.id;
-  document.getElementById('semanaInicio').value = registro.semanaInicio;
-  document.getElementById('semanaFim').value = registro.semanaFim;
+  campoData.value = registro.data;
   campoAtendimentos.value = registro.atendimentos;
   campoVendas.value = registro.vendas;
-  document.getElementById('faturamentoTotal').value = registro.faturamentoTotal;
-  document.getElementById('lucroBrutoTotal').value = registro.lucroBrutoTotal;
+  campoFaturamento.value = numeroParaMoeda(registro.faturamento);
+  campoLucroBruto.value = numeroParaMoeda(registro.lucroBruto);
   atualizarPreviewConversao();
-  formTitulo.textContent = 'Editar Semana';
-  btnSalvar.textContent = 'Atualizar Semana';
+  formTitulo.textContent = 'Editar Lançamento';
+  btnSalvar.textContent = 'Atualizar Dia';
   btnCancelar.style.display = 'inline-block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -362,60 +590,74 @@ function iniciarEdicao(id, resultados) {
 function cancelarEdicao() {
   form.reset();
   editId.value = '';
+  campoData.value = paraISO(new Date());
   conversaoPreview.textContent = '0%';
-  formTitulo.textContent = 'Nova Semana';
-  btnSalvar.textContent = 'Salvar Semana';
+  formTitulo.textContent = 'Lançar Resultado do Dia';
+  btnSalvar.textContent = 'Salvar Dia';
   btnCancelar.style.display = 'none';
-  mensagemErro.textContent = '';
+  limparErro();
 }
 btnCancelar.addEventListener('click', cancelarEdicao);
 
-async function excluirResultado(id) {
-  if (!confirm('Tem certeza que deseja excluir este registro?')) return;
-  await fetch(`/api/resultados/${id}`, { method: 'DELETE' });
-  carregarResultados();
+async function excluirRegistro(id) {
+  if (!confirm('Tem certeza que deseja excluir este lançamento?')) return;
+  try {
+    const resp = await fetch(`/api/dias/${id}`, { method: 'DELETE' });
+    if (!resp.ok && resp.status !== 404) throw new Error('Falha ao excluir');
+    carregarRegistros();
+  } catch (err) {
+    console.error(err);
+    mostrarErro('Não foi possível excluir o lançamento. Tente novamente.');
+  }
 }
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  mensagemErro.textContent = '';
+  limparErro();
 
   const payload = {
-    semanaInicio: document.getElementById('semanaInicio').value,
-    semanaFim: document.getElementById('semanaFim').value,
+    data: campoData.value,
     atendimentos: campoAtendimentos.value,
     vendas: campoVendas.value,
-    faturamentoTotal: document.getElementById('faturamentoTotal').value,
-    lucroBrutoTotal: document.getElementById('lucroBrutoTotal').value,
+    faturamento: valorMoedaParaNumero(campoFaturamento.value),
+    lucroBruto: valorMoedaParaNumero(campoLucroBruto.value),
   };
 
   const id = editId.value;
-  const url = id ? `/api/resultados/${id}` : '/api/resultados';
+  const url = id ? `/api/dias/${id}` : '/api/dias';
   const method = id ? 'PUT' : 'POST';
 
-  const resp = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
+  btnSalvar.disabled = true;
+  try {
+    const resp = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
 
-  if (!resp.ok) {
-    const erro = await resp.json();
-    mensagemErro.textContent = erro.erro || 'Erro ao salvar resultado.';
-    return;
+    if (!resp.ok) {
+      const erro = await resp.json().catch(() => ({}));
+      mostrarErro(erro.erro || 'Erro ao salvar o lançamento.');
+      return;
+    }
+
+    cancelarEdicao();
+    carregarRegistros();
+  } catch (err) {
+    console.error(err);
+    mostrarErro('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.');
+  } finally {
+    btnSalvar.disabled = false;
   }
-
-  cancelarEdicao();
-  carregarResultados();
 });
 
-carregarResultados();
+carregarRegistros();
 conectarTempoReal();
 
 function conectarTempoReal() {
   const origem = new EventSource('/api/eventos');
   origem.addEventListener('atualizado', () => {
-    carregarResultados();
+    carregarRegistros();
   });
   origem.onerror = () => {
     // A conexão SSE reconecta automaticamente; nada a fazer aqui.

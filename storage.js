@@ -7,24 +7,22 @@ const usaSupabase = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_KEY
 function paraRegistro(linha) {
   return {
     id: linha.id,
-    semanaInicio: linha.semana_inicio,
-    semanaFim: linha.semana_fim,
+    data: linha.data,
     atendimentos: linha.atendimentos,
     vendas: linha.vendas,
-    faturamentoTotal: Number(linha.faturamento_total),
-    lucroBrutoTotal: Number(linha.lucro_bruto_total),
+    faturamento: Number(linha.faturamento),
+    lucroBruto: Number(linha.lucro_bruto),
     criadoEm: linha.criado_em,
   };
 }
 
 function paraColunas(dados) {
   return {
-    semana_inicio: dados.semanaInicio,
-    semana_fim: dados.semanaFim,
+    data: dados.data,
     atendimentos: Number(dados.atendimentos),
     vendas: Number(dados.vendas),
-    faturamento_total: Number(dados.faturamentoTotal),
-    lucro_bruto_total: Number(dados.lucroBrutoTotal),
+    faturamento: Number(dados.faturamento),
+    lucro_bruto: Number(dados.lucroBruto),
   };
 }
 
@@ -36,16 +34,18 @@ function criarStorageSupabase() {
     tipo: 'supabase',
     async listar() {
       const { data, error } = await supabase
-        .from('resultados')
+        .from('registros_diarios')
         .select('*')
-        .order('semana_inicio', { ascending: false });
+        .order('data', { ascending: false });
       if (error) throw error;
       return data.map(paraRegistro);
     },
     async criar(dados) {
+      // Um lançamento por dia: se já existir um registro para essa data,
+      // atualiza em vez de duplicar.
       const { data, error } = await supabase
-        .from('resultados')
-        .insert(paraColunas(dados))
+        .from('registros_diarios')
+        .upsert(paraColunas(dados), { onConflict: 'data' })
         .select()
         .single();
       if (error) throw error;
@@ -53,7 +53,7 @@ function criarStorageSupabase() {
     },
     async atualizar(id, dados) {
       const { data, error } = await supabase
-        .from('resultados')
+        .from('registros_diarios')
         .update(paraColunas(dados))
         .eq('id', id)
         .select()
@@ -63,7 +63,7 @@ function criarStorageSupabase() {
     },
     async excluir(id) {
       const { data, error } = await supabase
-        .from('resultados')
+        .from('registros_diarios')
         .delete()
         .eq('id', id)
         .select()
@@ -76,7 +76,7 @@ function criarStorageSupabase() {
 
 function criarStorageArquivo() {
   const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
-  const DATA_FILE = path.join(DATA_DIR, 'resultados.json');
+  const DATA_FILE = path.join(DATA_DIR, 'registros.json');
 
   function ler() {
     if (!fs.existsSync(DATA_FILE)) return [];
@@ -85,9 +85,9 @@ function criarStorageArquivo() {
     return JSON.parse(raw);
   }
 
-  function salvar(resultados) {
+  function salvar(registros) {
     fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-    fs.writeFileSync(DATA_FILE, JSON.stringify(resultados, null, 2));
+    fs.writeFileSync(DATA_FILE, JSON.stringify(registros, null, 2));
   }
 
   // Serializa leitura+gravação para evitar corrupção quando duas pessoas
@@ -99,50 +99,51 @@ function criarStorageArquivo() {
     return resultado;
   }
 
+  function valores(dados) {
+    return {
+      data: dados.data,
+      atendimentos: Number(dados.atendimentos),
+      vendas: Number(dados.vendas),
+      faturamento: Number(dados.faturamento),
+      lucroBruto: Number(dados.lucroBruto),
+    };
+  }
+
   return {
     tipo: 'arquivo',
     async listar() {
-      return ler().sort((a, b) => (a.semanaInicio < b.semanaInicio ? 1 : -1));
+      return ler().sort((a, b) => (a.data < b.data ? 1 : -1));
     },
     async criar(dados) {
       return comLock(() => {
-        const resultados = ler();
-        const registro = {
-          id: crypto.randomUUID(),
-          ...dados,
-          atendimentos: Number(dados.atendimentos),
-          vendas: Number(dados.vendas),
-          faturamentoTotal: Number(dados.faturamentoTotal),
-          lucroBrutoTotal: Number(dados.lucroBrutoTotal),
-          criadoEm: new Date().toISOString(),
-        };
-        resultados.push(registro);
-        salvar(resultados);
+        const registros = ler();
+        const existente = registros.find((r) => r.data === dados.data);
+        if (existente) {
+          Object.assign(existente, valores(dados));
+          salvar(registros);
+          return existente;
+        }
+        const registro = { id: crypto.randomUUID(), ...valores(dados), criadoEm: new Date().toISOString() };
+        registros.push(registro);
+        salvar(registros);
         return registro;
       });
     },
     async atualizar(id, dados) {
       return comLock(() => {
-        const resultados = ler();
-        const index = resultados.findIndex((r) => r.id === id);
+        const registros = ler();
+        const index = registros.findIndex((r) => r.id === id);
         if (index === -1) return null;
-        resultados[index] = {
-          ...resultados[index],
-          ...dados,
-          atendimentos: Number(dados.atendimentos),
-          vendas: Number(dados.vendas),
-          faturamentoTotal: Number(dados.faturamentoTotal),
-          lucroBrutoTotal: Number(dados.lucroBrutoTotal),
-        };
-        salvar(resultados);
-        return resultados[index];
+        registros[index] = { ...registros[index], ...valores(dados) };
+        salvar(registros);
+        return registros[index];
       });
     },
     async excluir(id) {
       return comLock(() => {
-        const resultados = ler();
-        const filtrados = resultados.filter((r) => r.id !== id);
-        if (filtrados.length === resultados.length) return false;
+        const registros = ler();
+        const filtrados = registros.filter((r) => r.id !== id);
+        if (filtrados.length === registros.length) return false;
         salvar(filtrados);
         return true;
       });

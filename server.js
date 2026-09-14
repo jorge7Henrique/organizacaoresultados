@@ -13,7 +13,7 @@ function notificarClientes() {
 }
 
 function validarPayload(body) {
-  const campos = ['semanaInicio', 'semanaFim', 'atendimentos', 'vendas', 'faturamentoTotal', 'lucroBrutoTotal'];
+  const campos = ['data', 'atendimentos', 'vendas', 'faturamento', 'lucroBruto'];
   for (const campo of campos) {
     if (body[campo] === undefined || body[campo] === null || body[campo] === '') {
       return `Campo obrigatório ausente: ${campo}`;
@@ -25,11 +25,11 @@ function validarPayload(body) {
   if (Number.isNaN(Number(body.vendas)) || Number(body.vendas) < 0) {
     return 'Quantidade de Vendas inválida';
   }
-  if (Number.isNaN(Number(body.faturamentoTotal)) || Number(body.faturamentoTotal) < 0) {
-    return 'Faturamento Total inválido';
+  if (Number.isNaN(Number(body.faturamento)) || Number(body.faturamento) < 0) {
+    return 'Faturamento inválido';
   }
-  if (Number.isNaN(Number(body.lucroBrutoTotal))) {
-    return 'Lucro Bruto Total inválido';
+  if (Number.isNaN(Number(body.lucroBruto))) {
+    return 'Lucro Bruto inválido';
   }
   return null;
 }
@@ -37,9 +37,14 @@ function validarPayload(body) {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/api/resultados', async (req, res) => {
-  const resultados = await storage.listar();
-  res.json(resultados);
+app.get('/api/dias', async (req, res) => {
+  try {
+    const registros = await storage.listar();
+    res.json(registros);
+  } catch (err) {
+    console.error('Erro ao listar registros:', err);
+    res.status(500).json({ erro: 'Erro ao carregar os dados. Tente novamente.' });
+  }
 });
 
 app.get('/api/eventos', (req, res) => {
@@ -53,30 +58,45 @@ app.get('/api/eventos', (req, res) => {
   req.on('close', () => clientesSSE.delete(res));
 });
 
-app.post('/api/resultados', async (req, res) => {
+app.post('/api/dias', async (req, res) => {
   const erro = validarPayload(req.body);
   if (erro) return res.status(400).json({ erro });
 
-  const novo = await storage.criar(req.body);
-  notificarClientes();
-  res.status(201).json(novo);
+  try {
+    const novo = await storage.criar(req.body);
+    notificarClientes();
+    res.status(201).json(novo);
+  } catch (err) {
+    console.error('Erro ao salvar registro:', err);
+    res.status(500).json({ erro: 'Erro ao salvar o registro. Tente novamente.' });
+  }
 });
 
-app.put('/api/resultados/:id', async (req, res) => {
+app.put('/api/dias/:id', async (req, res) => {
   const erro = validarPayload(req.body);
   if (erro) return res.status(400).json({ erro });
 
-  const atualizado = await storage.atualizar(req.params.id, req.body);
-  if (!atualizado) return res.status(404).json({ erro: 'Registro não encontrado' });
-  notificarClientes();
-  res.json(atualizado);
+  try {
+    const atualizado = await storage.atualizar(req.params.id, req.body);
+    if (!atualizado) return res.status(404).json({ erro: 'Registro não encontrado' });
+    notificarClientes();
+    res.json(atualizado);
+  } catch (err) {
+    console.error('Erro ao atualizar registro:', err);
+    res.status(500).json({ erro: 'Erro ao atualizar o registro. Tente novamente.' });
+  }
 });
 
-app.delete('/api/resultados/:id', async (req, res) => {
-  const excluiu = await storage.excluir(req.params.id);
-  if (!excluiu) return res.status(404).json({ erro: 'Registro não encontrado' });
-  notificarClientes();
-  res.status(204).end();
+app.delete('/api/dias/:id', async (req, res) => {
+  try {
+    const excluiu = await storage.excluir(req.params.id);
+    if (!excluiu) return res.status(404).json({ erro: 'Registro não encontrado' });
+    notificarClientes();
+    res.status(204).end();
+  } catch (err) {
+    console.error('Erro ao excluir registro:', err);
+    res.status(500).json({ erro: 'Erro ao excluir o registro. Tente novamente.' });
+  }
 });
 
 app.listen(PORT, () => {
