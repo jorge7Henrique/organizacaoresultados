@@ -227,6 +227,10 @@
       <input type="hidden" id="edit-id" />
       <div class="grid">
         <div>
+          <label for="responsavel">Responsável pelo lançamento</label>
+          <input type="text" id="responsavel" placeholder="Seu nome" required />
+        </div>
+        <div>
           <label for="data">Data</label>
           <input type="date" id="data" required />
         </div>
@@ -299,6 +303,7 @@
         <thead>
           <tr>
             <th>Data</th>
+            <th>Responsável</th>
             <th>Atendimentos</th>
             <th>Vendas</th>
             <th>Conversão</th>
@@ -316,6 +321,7 @@
 
 <script>
 const form = document.getElementById('form-registro');
+const campoResponsavel = document.getElementById('responsavel');
 const campoData = document.getElementById('data');
 const campoAtendimentos = document.getElementById('atendimentos');
 const campoVendas = document.getElementById('vendas');
@@ -341,6 +347,12 @@ function paraISO(d) {
 
 function dataLocal(iso) {
   return new Date(iso + 'T00:00:00');
+}
+
+function escaparHtml(texto) {
+  const div = document.createElement('div');
+  div.textContent = texto;
+  return div.innerHTML;
 }
 
 function formatarData(iso) {
@@ -400,6 +412,15 @@ campoAtendimentos.addEventListener('input', atualizarPreviewConversao);
 campoVendas.addEventListener('input', atualizarPreviewConversao);
 
 if (!campoData.value) campoData.value = paraISO(new Date());
+
+// Lembra o nome de quem está usando este navegador, para não precisar
+// digitar de novo a cada lançamento.
+try {
+  const nomeSalvo = localStorage.getItem('pipofly_responsavel');
+  if (nomeSalvo) campoResponsavel.value = nomeSalvo;
+} catch (err) {
+  // localStorage indisponível (ex.: navegação privada); segue sem lembrar.
+}
 
 // ---------- carregar e renderizar ----------
 
@@ -538,6 +559,7 @@ function renderizarTabelaDias(registros) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${formatarData(r.data)}</td>
+      <td>${escaparHtml(r.responsavel)}</td>
       <td>${r.atendimentos}</td>
       <td>${r.vendas}</td>
       <td>${conversao.toFixed(1)}%</td>
@@ -575,6 +597,7 @@ function iniciarEdicao(id) {
   const registro = ultimosRegistros.find((r) => r.id === id);
   if (!registro) return;
   editId.value = registro.id;
+  campoResponsavel.value = registro.responsavel;
   campoData.value = registro.data;
   campoAtendimentos.value = registro.atendimentos;
   campoVendas.value = registro.vendas;
@@ -588,8 +611,10 @@ function iniciarEdicao(id) {
 }
 
 function cancelarEdicao() {
+  const nomeAtual = campoResponsavel.value;
   form.reset();
   editId.value = '';
+  campoResponsavel.value = nomeAtual;
   campoData.value = paraISO(new Date());
   conversaoPreview.textContent = '0%';
   formTitulo.textContent = 'Lançar Resultado do Dia';
@@ -617,6 +642,7 @@ form.addEventListener('submit', async (e) => {
 
   const payload = {
     data: campoData.value,
+    responsavel: campoResponsavel.value.trim(),
     atendimentos: campoAtendimentos.value,
     vendas: campoVendas.value,
     faturamento: valorMoedaParaNumero(campoFaturamento.value),
@@ -639,6 +665,12 @@ form.addEventListener('submit', async (e) => {
       const erro = await resp.json().catch(() => ({}));
       mostrarErro(erro.erro || 'Erro ao salvar o lançamento.');
       return;
+    }
+
+    try {
+      localStorage.setItem('pipofly_responsavel', payload.responsavel);
+    } catch (err) {
+      // localStorage indisponível; sem problema, só não lembra da próxima vez.
     }
 
     cancelarEdicao();

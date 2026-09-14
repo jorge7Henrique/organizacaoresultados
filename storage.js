@@ -8,6 +8,7 @@ function paraRegistro(linha) {
   return {
     id: linha.id,
     data: linha.data,
+    responsavel: linha.responsavel,
     atendimentos: linha.atendimentos,
     vendas: linha.vendas,
     faturamento: Number(linha.faturamento),
@@ -19,6 +20,7 @@ function paraRegistro(linha) {
 function paraColunas(dados) {
   return {
     data: dados.data,
+    responsavel: dados.responsavel,
     atendimentos: Number(dados.atendimentos),
     vendas: Number(dados.vendas),
     faturamento: Number(dados.faturamento),
@@ -41,11 +43,12 @@ function criarStorageSupabase() {
       return data.map(paraRegistro);
     },
     async criar(dados) {
-      // Um lançamento por dia: se já existir um registro para essa data,
-      // atualiza em vez de duplicar.
+      // Um lançamento por pessoa por dia: se essa pessoa já tiver um
+      // registro nessa data, atualiza em vez de duplicar. Duas pessoas
+      // diferentes podem lançar no mesmo dia sem conflito.
       const { data, error } = await supabase
         .from('registros_diarios')
-        .upsert(paraColunas(dados), { onConflict: 'data' })
+        .upsert(paraColunas(dados), { onConflict: 'data,responsavel' })
         .select()
         .single();
       if (error) throw error;
@@ -102,6 +105,7 @@ function criarStorageArquivo() {
   function valores(dados) {
     return {
       data: dados.data,
+      responsavel: dados.responsavel,
       atendimentos: Number(dados.atendimentos),
       vendas: Number(dados.vendas),
       faturamento: Number(dados.faturamento),
@@ -117,7 +121,7 @@ function criarStorageArquivo() {
     async criar(dados) {
       return comLock(() => {
         const registros = ler();
-        const existente = registros.find((r) => r.data === dados.data);
+        const existente = registros.find((r) => r.data === dados.data && r.responsavel === dados.responsavel);
         if (existente) {
           Object.assign(existente, valores(dados));
           salvar(registros);
