@@ -410,6 +410,17 @@ form.addEventListener('submit', async (e) => {
 });
 
 carregarResultados();
+conectarTempoReal();
+
+function conectarTempoReal() {
+  const origem = new EventSource('/api/eventos');
+  origem.addEventListener('atualizado', () => {
+    carregarResultados();
+  });
+  origem.onerror = () => {
+    // A conexão SSE reconecta automaticamente; nada a fazer aqui.
+  };
+}
 </script>
 </body>
 </html>

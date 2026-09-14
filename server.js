@@ -19,6 +19,22 @@ function salvarResultados(resultados) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(resultados, null, 2));
 }
 
+// Serializa leitura+gravação para evitar corrupção quando duas pessoas
+// salvam ao mesmo tempo (ex.: você e o funcionário em cidades diferentes).
+let filaEscrita = Promise.resolve();
+function comLock(operacao) {
+  const resultado = filaEscrita.then(operacao);
+  filaEscrita = resultado.catch(() => {});
+  return resultado;
+}
+
+const clientesSSE = new Set();
+function notificarClientes() {
+  for (const res of clientesSSE) {
+    res.write('event: atualizado\ndata: {}\n\n');
+  }
+}
+
 function validarPayload(body) {
   const campos = ['semanaInicio', 'semanaFim', 'atendimentos', 'vendas', 'faturamentoTotal', 'lucroBrutoTotal'];
   for (const campo of campos) {
@@ -49,54 +65,79 @@ app.get('/api/resultados', (req, res) => {
   res.json(resultados);
 });
 
-app.post('/api/resultados', (req, res) => {
+app.get('/api/eventos', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+  res.write('\n');
+  clientesSSE.add(res);
+  req.on('close', () => clientesSSE.delete(res));
+});
+
+app.post('/api/resultados', async (req, res) => {
   const erro = validarPayload(req.body);
   if (erro) return res.status(400).json({ erro });
 
-  const resultados = lerResultados();
-  const novo = {
-    id: crypto.randomUUID(),
-    semanaInicio: req.body.semanaInicio,
-    semanaFim: req.body.semanaFim,
-    atendimentos: Number(req.body.atendimentos),
-    vendas: Number(req.body.vendas),
-    faturamentoTotal: Number(req.body.faturamentoTotal),
-    lucroBrutoTotal: Number(req.body.lucroBrutoTotal),
-    criadoEm: new Date().toISOString(),
-  };
-  resultados.push(novo);
-  salvarResultados(resultados);
+  const novo = await comLock(() => {
+    const resultados = lerResultados();
+    const registro = {
+      id: crypto.randomUUID(),
+      semanaInicio: req.body.semanaInicio,
+      semanaFim: req.body.semanaFim,
+      atendimentos: Number(req.body.atendimentos),
+      vendas: Number(req.body.vendas),
+      faturamentoTotal: Number(req.body.faturamentoTotal),
+      lucroBrutoTotal: Number(req.body.lucroBrutoTotal),
+      criadoEm: new Date().toISOString(),
+    };
+    resultados.push(registro);
+    salvarResultados(resultados);
+    return registro;
+  });
+  notificarClientes();
   res.status(201).json(novo);
 });
 
-app.put('/api/resultados/:id', (req, res) => {
+app.put('/api/resultados/:id', async (req, res) => {
   const erro = validarPayload(req.body);
   if (erro) return res.status(400).json({ erro });
 
-  const resultados = lerResultados();
-  const index = resultados.findIndex((r) => r.id === req.params.id);
-  if (index === -1) return res.status(404).json({ erro: 'Registro não encontrado' });
+  const atualizado = await comLock(() => {
+    const resultados = lerResultados();
+    const index = resultados.findIndex((r) => r.id === req.params.id);
+    if (index === -1) return null;
 
-  resultados[index] = {
-    ...resultados[index],
-    semanaInicio: req.body.semanaInicio,
-    semanaFim: req.body.semanaFim,
-    atendimentos: Number(req.body.atendimentos),
-    vendas: Number(req.body.vendas),
-    faturamentoTotal: Number(req.body.faturamentoTotal),
-    lucroBrutoTotal: Number(req.body.lucroBrutoTotal),
-  };
-  salvarResultados(resultados);
-  res.json(resultados[index]);
+    resultados[index] = {
+      ...resultados[index],
+      semanaInicio: req.body.semanaInicio,
+      semanaFim: req.body.semanaFim,
+      atendimentos: Number(req.body.atendimentos),
+      vendas: Number(req.body.vendas),
+      faturamentoTotal: Number(req.body.faturamentoTotal),
+      lucroBrutoTotal: Number(req.body.lucroBrutoTotal),
+    };
+    salvarResultados(resultados);
+    return resultados[index];
+  });
+
+  if (!atualizado) return res.status(404).json({ erro: 'Registro não encontrado' });
+  notificarClientes();
+  res.json(atualizado);
 });
 
-app.delete('/api/resultados/:id', (req, res) => {
-  const resultados = lerResultados();
-  const filtrados = resultados.filter((r) => r.id !== req.params.id);
-  if (filtrados.length === resultados.length) {
-    return res.status(404).json({ erro: 'Registro não encontrado' });
-  }
-  salvarResultados(filtrados);
+app.delete('/api/resultados/:id', async (req, res) => {
+  const excluiu = await comLock(() => {
+    const resultados = lerResultados();
+    const filtrados = resultados.filter((r) => r.id !== req.params.id);
+    if (filtrados.length === resultados.length) return false;
+    salvarResultados(filtrados);
+    return true;
+  });
+
+  if (!excluiu) return res.status(404).json({ erro: 'Registro não encontrado' });
+  notificarClientes();
   res.status(204).end();
 });
 
