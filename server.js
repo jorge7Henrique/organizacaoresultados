@@ -13,11 +13,14 @@ function notificarClientes() {
 }
 
 function validarPayload(body) {
-  const campos = ['data', 'atendimentos', 'vendas', 'faturamento', 'lucroBruto'];
+  const campos = ['data', 'responsavel', 'atendimentos', 'vendas', 'faturamento', 'lucroBruto'];
   for (const campo of campos) {
     if (body[campo] === undefined || body[campo] === null || body[campo] === '') {
       return `Campo obrigatório ausente: ${campo}`;
     }
+  }
+  if (typeof body.responsavel !== 'string' || body.responsavel.trim().length === 0) {
+    return 'Informe o nome do responsável pelo lançamento';
   }
   if (Number.isNaN(Number(body.atendimentos)) || Number(body.atendimentos) < 0) {
     return 'Quantidade de Atendimentos inválida';
@@ -61,6 +64,7 @@ app.get('/api/eventos', (req, res) => {
 app.post('/api/dias', async (req, res) => {
   const erro = validarPayload(req.body);
   if (erro) return res.status(400).json({ erro });
+  req.body.responsavel = req.body.responsavel.trim();
 
   try {
     const novo = await storage.criar(req.body);
@@ -75,6 +79,7 @@ app.post('/api/dias', async (req, res) => {
 app.put('/api/dias/:id', async (req, res) => {
   const erro = validarPayload(req.body);
   if (erro) return res.status(400).json({ erro });
+  req.body.responsavel = req.body.responsavel.trim();
 
   try {
     const atualizado = await storage.atualizar(req.params.id, req.body);
