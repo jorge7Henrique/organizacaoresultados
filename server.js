@@ -1,33 +1,9 @@
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
+const storage = require('./storage');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
-const DATA_FILE = path.join(DATA_DIR, 'resultados.json');
-
-function lerResultados() {
-  if (!fs.existsSync(DATA_FILE)) return [];
-  const raw = fs.readFileSync(DATA_FILE, 'utf-8').trim();
-  if (!raw) return [];
-  return JSON.parse(raw);
-}
-
-function salvarResultados(resultados) {
-  fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(resultados, null, 2));
-}
-
-// Serializa leitura+gravação para evitar corrupção quando duas pessoas
-// salvam ao mesmo tempo (ex.: você e o funcionário em cidades diferentes).
-let filaEscrita = Promise.resolve();
-function comLock(operacao) {
-  const resultado = filaEscrita.then(operacao);
-  filaEscrita = resultado.catch(() => {});
-  return resultado;
-}
 
 const clientesSSE = new Set();
 function notificarClientes() {
@@ -61,8 +37,8 @@ function validarPayload(body) {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/api/resultados', (req, res) => {
-  const resultados = lerResultados().sort((a, b) => (a.semanaInicio < b.semanaInicio ? 1 : -1));
+app.get('/api/resultados', async (req, res) => {
+  const resultados = await storage.listar();
   res.json(resultados);
 });
 
@@ -81,22 +57,7 @@ app.post('/api/resultados', async (req, res) => {
   const erro = validarPayload(req.body);
   if (erro) return res.status(400).json({ erro });
 
-  const novo = await comLock(() => {
-    const resultados = lerResultados();
-    const registro = {
-      id: crypto.randomUUID(),
-      semanaInicio: req.body.semanaInicio,
-      semanaFim: req.body.semanaFim,
-      atendimentos: Number(req.body.atendimentos),
-      vendas: Number(req.body.vendas),
-      faturamentoTotal: Number(req.body.faturamentoTotal),
-      lucroBrutoTotal: Number(req.body.lucroBrutoTotal),
-      criadoEm: new Date().toISOString(),
-    };
-    resultados.push(registro);
-    salvarResultados(resultados);
-    return registro;
-  });
+  const novo = await storage.criar(req.body);
   notificarClientes();
   res.status(201).json(novo);
 });
@@ -105,43 +66,19 @@ app.put('/api/resultados/:id', async (req, res) => {
   const erro = validarPayload(req.body);
   if (erro) return res.status(400).json({ erro });
 
-  const atualizado = await comLock(() => {
-    const resultados = lerResultados();
-    const index = resultados.findIndex((r) => r.id === req.params.id);
-    if (index === -1) return null;
-
-    resultados[index] = {
-      ...resultados[index],
-      semanaInicio: req.body.semanaInicio,
-      semanaFim: req.body.semanaFim,
-      atendimentos: Number(req.body.atendimentos),
-      vendas: Number(req.body.vendas),
-      faturamentoTotal: Number(req.body.faturamentoTotal),
-      lucroBrutoTotal: Number(req.body.lucroBrutoTotal),
-    };
-    salvarResultados(resultados);
-    return resultados[index];
-  });
-
+  const atualizado = await storage.atualizar(req.params.id, req.body);
   if (!atualizado) return res.status(404).json({ erro: 'Registro não encontrado' });
   notificarClientes();
   res.json(atualizado);
 });
 
 app.delete('/api/resultados/:id', async (req, res) => {
-  const excluiu = await comLock(() => {
-    const resultados = lerResultados();
-    const filtrados = resultados.filter((r) => r.id !== req.params.id);
-    if (filtrados.length === resultados.length) return false;
-    salvarResultados(filtrados);
-    return true;
-  });
-
+  const excluiu = await storage.excluir(req.params.id);
   if (!excluiu) return res.status(404).json({ erro: 'Registro não encontrado' });
   notificarClientes();
   res.status(204).end();
 });
 
 app.listen(PORT, () => {
-  console.log(`Monitoramento de Resultados rodando em http://localhost:${PORT}`);
+  console.log(`Monitoramento de Resultados rodando em http://localhost:${PORT} (armazenamento: ${storage.tipo})`);
 });

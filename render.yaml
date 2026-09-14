@@ -2,13 +2,11 @@ services:
   - type: web
     name: monitoramento-resultados
     env: node
-    plan: starter
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     envVars:
-      - key: DATA_DIR
-        value: /data
-    disk:
-      name: dados-resultados
-      mountPath: /data
-      sizeGB: 1
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
